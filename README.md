@@ -157,3 +157,105 @@ $ terraform output ip_externa
 $ curl -m 8 http://$(terraform output -raw ip_externa)
 <h1><identificacion></h1><p>Servida desde Terraform por web-tf</p>
 ```
+
+## Parte 3
+
+```bash
+$ terraform apply
+google_compute_firewall.permitir_http: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/global/firewalls/permitir-http]
+google_compute_instance.web: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf]
+
+No changes. Your infrastructure matches the configuration.
+
+Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+ip_externa = "34.58.138.59"
+```
+
+> Agregar un tag manualmente a la instancia (no se guardó la configuración del taller pasado donde se definía la zona, toncs sólo decirle que la zona recomendada no era y ya se solucionó)
+```bash
+$ gcloud compute instances add-tags web-tf --tags=prueba-manual
+Did you mean zone [us-east1-b] for instance: [web-tf] (Y/n)?  n
+
+No zone specified. Using zone [us-central1-a] for instance: [web-tf].
+Updated [https://www.googleapis.com/compute/v1/projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf].
+```
+
+> Ver lo que planea Terraform con respecto a lo anterior
+```bash
+$ terraform plan
+google_compute_firewall.permitir_http: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/global/firewalls/permitir-http]
+google_compute_instance.web: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf]
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # google_compute_instance.web will be updated in-place
+  ~ resource "google_compute_instance" "web" {
+        id                         = "projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf"
+        name                       = "web-tf"
+      ~ tags                       = [
+          - "prueba-manual",
+            "servidor-web",
+        ]
+        # (25 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+> Y terraform le quita la tag a la instancia
+```bash
+anorakteam@cloudshell:~/sept-07/practica-terraform-7-sept (project-ded4209f-94f1-47b0-a63)$ terraform apply
+google_compute_firewall.permitir_http: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/global/firewalls/permitir-http]
+google_compute_instance.web: Refreshing state... [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf]
+
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+
+Terraform will perform the following actions:
+
+  # google_compute_instance.web will be updated in-place
+  ~ resource "google_compute_instance" "web" {
+        id                         = "projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf"
+        name                       = "web-tf"
+      ~ tags                       = [
+          - "prueba-manual",
+            "servidor-web",
+        ]
+        # (25 unchanged attributes hidden)
+
+        # (4 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+google_compute_instance.web: Modifying... [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf]
+google_compute_instance.web: Still modifying... [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf, 00m10s elapsed]
+google_compute_instance.web: Modifications complete after 12s [id=projects/project-ded4209f-94f1-47b0-a63/zones/us-central1-a/instances/web-tf]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+
+Outputs:
+
+ip_externa = "34.58.138.59"
+anorakteam@cloudshell:~/sept-07/practica-terraform-7-sept (project-ded4209f-94f1-47b0-a63)$ gcloud compute instances describe web-tf --format="value(tags.items)"
+Did you mean zone [us-east1-b] for instance: [web-tf] (Y/n)?  n
+
+No zone specified. Using zone [us-central1-a] for instance: [web-tf].
+servidor-web
+```
