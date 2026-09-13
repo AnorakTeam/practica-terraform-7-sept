@@ -1,6 +1,41 @@
 # practica-terraform-7-sept
 > Ups, eran commits en español
 
+# 1. Qué se construyó
+
+Diagrama mermaid mostrando un recuento del estado del ejercicio/taller al final de la parte 6:
+
+```mermaid
+flowchart LR
+    subgraph local["Control de Versiones y Ejecución"]
+        repo["Repositorio GitHub<br><i>main.tf, variables.tf,<br>outputs.tf, terraform.tfvars,<br>arranque.sh</i>"]
+        cs["Cloud Shell<br><b>Terraform CLI</b>"]
+    end
+
+    subgraph gcp["Proyecto de Google Cloud"]
+        subgraph storage["Almacenamiento de Estado"]
+            bucket[("Bucket Cloud Storage<br><b>tfstate-project-ded4209f-94f1-47b0-a63</b><br><i>practica-2/default.tfstate</i>")]
+        end
+
+        subgraph vpc["Red VPC (default)"]
+            fw["Cortafuegos<br><b>permitir-http</b><br><i>allow tcp:80 (0.0.0.0/0)</i>"]
+            ip["Dirección IP Externa<br><i>(efímera / estática)</i>"]
+            vm["Compute Engine VM<br><b>web-tf</b> (e2-micro)<br>tag: <i>servidor-web</i><br>Servidor Nginx"]
+        end
+    end
+
+    internet((Cliente / Internet)) -->|HTTP :80| ip
+    ip --- vm
+    fw -.->|Aplica por target_tags| vm
+
+    repo -->|git pull| cs
+    cs -->|terraform apply| vm
+    cs -->|terraform apply| fw
+    cs <-->|backend 'gcs'<br>Bloqueo y sincronización de estado| bucket
+```
+
+# 2. Evidencias
+
 ## Parte 1
 
 Outputs de la terminal de gcloud shell:
@@ -378,6 +413,7 @@ IPs obtenidas antes y después:
 
 ### Tabla de comparación
 
+También se deja plasmada como "3. Tabla de tiempos" después de esta sección de evidencias.
 
 | Cómo                                  | Tiempo                                                                                                                                                | Qué queda después                                                                                                     |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -972,3 +1008,42 @@ ip_externa = "35.255.29.82"
 anorakteam@cloudshell:~/sept-07/practica-terraform-7-sept (project-ded4209f-94f1-47b0-a63)$ terraform output ip_externa
 "35.255.29.82"
 ```
+
+## Parte 7
+
+> "There was nothing in this room. Stanley knew that, and yet he lingered." _**-Stanley Parable**_
+
+
+Output de todos los recursos, después de aplicado el terraform destroy:
+
+```bash
+gcloud compute instances list && gcloud compute disks list && gcloud compute addresses list && gcloud compute firewall-rules list --filter="name=permitir-http" && terraform state list
+Listed 0 items.
+Listed 0 items.
+Listed 0 items.
+
+To show all fields of the firewall, please show in JSON format: --format=json
+To show all fields in table format, please see the examples in --help.
+
+```
+
+# 3. Tabla de tiempos
+
+| Cómo                                  | Tiempo                                                                                                                                                | Qué queda después                                                                                                     |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Interfaz gráfica (Práctica 1, fase 1) | más de 2 minutos haciéndolo rápido                                                                                                                    | Nada. Ni siquiera la lista de clics.                                                                                  |
+| `gcloud` (Práctica 1, fase 5)         | 13.959s (probablemente porque ya existía el tag de firewall, terraform lo tuvo que crear y en esta práctica no en este momento de ejecutar el código) | Un comando en el historial, si no se borra.                                                                           |
+| Terraform (hoy)                       | real    0m19.071s                                                                                                                                     | Un repositorio que cualquiera puede clonar, leer y volver a ejecutar, con el historial de cómo llegó a ser lo que es. |
+
+# 4. Respuestas breves 
+
+### 1. En la fase 3, la etiqueta puesta a mano desapareció con el siguiente apply. Si en lugar de una etiqueta se hubiera creado a mano una máquina nueva, web-manual, ¿qué habría propuesto terraform plan? ¿Y qué habría hecho terraform destroy con ella? Justificar con el papel que cumple el estado.
+
+- Suponiendo que "web-manual" fué creado por el comando de gcloud, terraform habría notificado 0 cambios, pues no es un recurso declarado en el código, ni en ningún otro archivo relevante para el state de terraform. "terraform destroy" por ende tampoco hubiera tocado la máquina manual, es decir que la memoria que tiene plasmada terraform en el tfstate no tiene ningún registro de web-manual así que no afecta directamente ese recurso.
+
+### 2. El bucket del estado se creó con gcloud y no en main.tf. Explicar el problema con palabras propias y decir qué pasaría el día que alguien ejecute terraform destroy si el bucket sí estuviera declarado ahí.
+
+  - Es bastante directa la respuesta: se borra el bucket, se pierde lo que esté almacenado allí, y el backend de main.tf conectado allí tratará de buscar un estado cada vez que se lance terraform, pero como cada vez que se destruye, se va también el bucket y el state almacenado, siempre encontrará algo vacío cuando se hace un apply. Incluso, habría otro problema que sería que terraform no podría guardar el estado ya que no existe un bucket hasta que se haya creado en el apply, o sea un "bucle" de querer guardar el estado en un bucket, pero el bucket necesita ser creado por el estado para poder ser utilizado, y así sucesivamente.
+
+### 3. Con los precios de lista de la calculadora de Google Cloud: ¿cuánto costaría un mes con la infraestructura de la fase 6 encendida? ¿Cuánto costó tenerla encendida durante la práctica? ¿Qué recurso sigue costando después del destroy, cuánto, y por qué se decidió conservarlo?
+
