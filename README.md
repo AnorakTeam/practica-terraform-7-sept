@@ -144,3 +144,16 @@ Untracked files:
 
 nothing added to commit but untracked files present (use "git add" to track)
 ```
+
+## Parte 2
+
+> Hecho el apply con el cambio del outputs.tf
+```bash
+$ terraform output ip_externa
+"34.58.138.59"
+```
+> Y el test para probar que funciona como variable extraible
+```bash
+$ curl -m 8 http://$(terraform output -raw ip_externa)
+<h1><identificacion></h1><p>Servida desde Terraform por web-tf</p>
+```
