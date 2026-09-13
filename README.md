@@ -1043,7 +1043,25 @@ To show all fields in table format, please see the examples in --help.
 
 ### 2. El bucket del estado se creó con gcloud y no en main.tf. Explicar el problema con palabras propias y decir qué pasaría el día que alguien ejecute terraform destroy si el bucket sí estuviera declarado ahí.
 
-  - Es bastante directa la respuesta: se borra el bucket, se pierde lo que esté almacenado allí, y el backend de main.tf conectado allí tratará de buscar un estado cada vez que se lance terraform, pero como cada vez que se destruye, se va también el bucket y el state almacenado, siempre encontrará algo vacío cuando se hace un apply. Incluso, habría otro problema que sería que terraform no podría guardar el estado ya que no existe un bucket hasta que se haya creado en el apply, o sea un "bucle" de querer guardar el estado en un bucket, pero el bucket necesita ser creado por el estado para poder ser utilizado, y así sucesivamente.
+- Es bastante directa la respuesta: se borra el bucket, se pierde lo que esté almacenado allí, y el backend de main.tf conectado allí tratará de buscar un estado cada vez que se lance terraform, pero como cada vez que se destruye, se va también el bucket y el state almacenado, siempre encontrará algo vacío cuando se hace un apply. Incluso, habría otro problema que sería que terraform no podría guardar el estado ya que no existe un bucket hasta que se haya creado en el apply, o sea un "bucle" de querer guardar el estado en un bucket, pero el bucket necesita ser creado por el estado para poder ser utilizado, y así sucesivamente.
 
 ### 3. Con los precios de lista de la calculadora de Google Cloud: ¿cuánto costaría un mes con la infraestructura de la fase 6 encendida? ¿Cuánto costó tenerla encendida durante la práctica? ¿Qué recurso sigue costando después del destroy, cuánto, y por qué se decidió conservarlo?
 
+- El costo de mantener un mes esta infraestructura fué calculado con la calculadora de costos de gcp de manera generalizada:
+
+![evidencia de calculadora de gcp](evidencias/estimado-gcp-calc.png)
+
+- Alrededor de $14.40/m, que serían alrededor (con el dolar a ~3.090) de $44.496 cop.
+
+- Ahora, durante la práctica se gastaron alrededor de $54 cop. Hay unas cuantas matices con esto, porque en mi cuenta me aparece un gasto de unos $10 cop:
+
+![informe_gasto_bruto](evidencias/07-facturacion.png)
+> Este es el que consideramos el gasto real, en bruto, sin descuentos de gcp por la tier de prueba
+
+- Y acá la razón por la que decimos que fueron unos $10 cop:
+
+![bienvenida-con-informacion-tier-prueba](evidencias/bienvenida-real.png)
+
+- Con lo que se puede ver que (teniendo en cuenta que se gastó $1 cop en la práctica 1, + un par de pesos más en unas cosas que se realizaron antes de este taller), que el gasto fué aproximadamente de unos $10 cop.
+
+- El único servicio que sigue costando es el bucket donde está el state almacenado, se esperaron un par de días para que apareciera en el informe de costos pero suponemos que está costando menos de $1 cop, pues no aparece en la traza de los informes. Se decide conservar el bucket para poder tener el state disponible para el terraform en caso de que se vuelva a aplicar la práctica.
