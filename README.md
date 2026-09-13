@@ -1,4 +1,4 @@
-# practica-terraform-9-sept
+# practica-terraform-7-sept
 > Ups, eran commits en español
 
 ## Parte 1
