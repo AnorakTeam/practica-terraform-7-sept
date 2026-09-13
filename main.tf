@@ -30,6 +30,7 @@ resource "google_compute_instance" "web" {
   name         = "web-tf"
   machine_type = var.tipo_maquina
   tags         = ["servidor-web"]
+  allow_stopping_for_update = true
 
   boot_disk {
     initialize_params {
